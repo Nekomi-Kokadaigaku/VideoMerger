@@ -32,13 +32,10 @@ struct VideoFile: Identifiable {
     
     // 将文件大小转换为易读格式
     var sizeString: String {
-        if let size = fileSize {
-            let formatter = ByteCountFormatter()
-            formatter.countStyle = .file
-            return formatter.string(fromByteCount: Int64(size))
-        } else {
-            return "未知"
-        }
+        guard let size = fileSize else { return "未知大小" }
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: Int64(size))
     }
     
     /// 尝试从文件名中解析出 "YYYYMMDD-HHMMSS" 的时间戳
