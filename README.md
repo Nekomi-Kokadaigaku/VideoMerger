@@ -13,5 +13,5 @@
 ## Running
 
 <p align="center">
-  <img src="https://github.com/Nekomi-Kokadaigaku/VideoMerger/blob/8ea573b56bfcfe5b561ca8cf29d9796f63f1ecc3/VideoMerger/Assets.xcassets/Image.imageset/Snipaste_2025-02-27_01-24-55.png" alt="界面" width="400">
+  <img src="https://github.com/Nekomi-Kokadaigaku/VideoMerger/blob/4d12c57a0139d8794e3fcdf1806013e08a2ef304/VideoMerger/Assets.xcassets/Image.imageset/Snipaste_2025-02-27_04-38-40.png" alt="界面" width="400">
 </p>
