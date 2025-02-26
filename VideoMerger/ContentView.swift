@@ -117,9 +117,7 @@ struct ContentView: View {
             
             // ========== 状态指示 & 开始合并 ==========
             HStack {
-                Circle()
-                    .fill(colorForStatus(model.mergeStatus))
-                    .frame(width: 14, height: 14)
+                AnimatedStatusCircle(status: model.mergeStatus)
                 
                 Text(statusText(for: model.mergeStatus))
                     .font(.footnote)
