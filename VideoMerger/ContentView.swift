@@ -14,14 +14,16 @@ struct ContentView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("VideoMerger").font(.title).padding(.bottom, 8)
+            Text("VideoMerger")
+                .font(.title)
+                .padding(.bottom, 8)
             
             // 文件夹路径及选择按钮
             HStack {
                 Text("文件夹路径：")
                 TextField("请选择文件夹", text: Binding(
                     get: { model.folderURL?.path ?? "" },
-                    set: { _ in } // 只读
+                    set: { _ in }
                 ))
                 .disabled(true)
                 .frame(minWidth: 300)
@@ -50,17 +52,40 @@ struct ContentView: View {
                 .frame(minWidth: 300)
             }
             
-            // 视频文件列表（支持拖动排序）
-            Text("合并视频文件列表（可拖动排序）：")
+            // 视频文件列表（支持拖动排序及删除）
+            Text("合并视频文件列表（可拖动排序、删除）：")
             List {
                 ForEach(model.videoFiles) { video in
                     HStack {
                         Image(systemName: "line.horizontal.3")
                             .foregroundColor(.gray)
-                        Text(video.name)
+                        VStack(alignment: .leading) {
+                            Text(video.name)
+                            Text(video.sizeString)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        // 删除按钮
+                        Button {
+                            if let index = model.videoFiles.firstIndex(where: { $0.id == video.id }) {
+                                model.videoFiles.remove(at: index)
+                            }
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .buttonStyle(BorderlessButtonStyle())
+                    }
+                    .contextMenu {
+                        Button("删除") {
+                            if let index = model.videoFiles.firstIndex(where: { $0.id == video.id }) {
+                                model.videoFiles.remove(at: index)
+                            }
+                        }
                     }
                 }
                 .onMove(perform: move)
+                .onDelete(perform: deleteVideo)
             }
             .frame(height: 150)
             
@@ -68,7 +93,7 @@ struct ContentView: View {
             Text("生成的合并指令：")
             TextEditor(text: Binding(
                 get: { model.mergeCommand },
-                set: { _ in }  // 不允许用户修改，但可以复制
+                set: { _ in }  // 不允许用户修改，但可复制
             ))
             .frame(height: 80)
             .border(Color.gray)
@@ -105,6 +130,11 @@ struct ContentView: View {
     // 拖动排序处理
     func move(from source: IndexSet, to destination: Int) {
         model.videoFiles.move(fromOffsets: source, toOffset: destination)
+    }
+    
+    // 删除视频项（备用）
+    func deleteVideo(at offsets: IndexSet) {
+        model.videoFiles.remove(atOffsets: offsets)
     }
     
     // 打开文件夹选择面板

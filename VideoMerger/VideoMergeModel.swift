@@ -91,10 +91,10 @@ class VideoMergeModel: ObservableObject {
             return
         }
         
-        // 将状态置为运行中
+        // 状态置为运行中
         self.mergeStatus = .running
         
-        // 在 zsh 环境下执行命令，确保加载用户 .zshrc 等环境
+        // 在 zsh 环境下执行命令，确保加载用户环境变量（-l 为登录 shell）
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
         process.arguments = ["-l", "-c", mergeCommand]
@@ -143,4 +143,3 @@ class VideoMergeModel: ObservableObject {
         }
     }
 }
-
