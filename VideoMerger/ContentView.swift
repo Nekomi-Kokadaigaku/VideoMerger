@@ -8,12 +8,13 @@
 import SwiftUI
 import UserNotifications
 
-// MARK: - SwiftUI 主界面
+/// 主界面
 struct ContentView: View {
     @ObservedObject var model = VideoMergeModel()
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            
             // ========== 文件夹选择 & 路径设置 ==========
             GroupBox(label: Text("视频文件夹选择").font(.headline)) {
                 HStack {
@@ -63,7 +64,7 @@ struct ContentView: View {
                         .font(.system(size: 14))
                     }
                     
-                    // 新增：是否删除源文件的选择框
+                    // 是否删除源文件的选择框
                     Toggle("合并完成后删除源文件", isOn: Binding(
                         get: { model.shouldDeleteSourceFiles },
                         set: { _ in
@@ -76,7 +77,7 @@ struct ContentView: View {
                 .padding(.vertical, 6)
             }
             
-            // ========== 视频文件列表（标题含文件总数 & 合并后大小） ==========
+            // ========== 视频文件列表 & 标题显示文件数、预计/实际大小 ==========
             GroupBox(label: groupBoxLabel()) {
                 List {
                     ForEach(model.videoFiles) { video in
@@ -98,7 +99,6 @@ struct ContentView: View {
                 )
                 .frame(minHeight: 80, maxHeight: 120)
                 .lineLimit(nil)
-                // 保证可以滚动 & 复制
                 .scrollContentBackground(.automatic)
                 .padding(.vertical, 4)
                 .font(.system(size: 12))
@@ -106,9 +106,7 @@ struct ContentView: View {
             
             // ========== 状态指示 & 开始合并 ==========
             HStack {
-                Circle()
-                    .fill(colorForStatus(model.mergeStatus))
-                    .frame(width: 14, height: 14)
+                AnimatedStatusCircle(status: model.mergeStatus)
                 
                 Text(statusText(for: model.mergeStatus))
                     .font(.system(size: 12))
@@ -140,15 +138,25 @@ struct ContentView: View {
     
     // MARK: - 子视图 & 帮助函数
     
-    /// GroupBox 标题：显示“合并视频文件列表 - N 个文件 + (合并后大小)”
+    /// GroupBox 标题：显示“合并视频文件列表 - N 个文件”，并在后面显示“预计合并后大小”和“实际合并后大小”
     @ViewBuilder
     private func groupBoxLabel() -> some View {
         HStack {
             Text("合并视频文件列表（可拖动排序、删除） - \(model.videoFiles.count) 个文件")
                 .font(.headline)
+            
+            // 若已经加载到文件，则显示“预计合并后大小”
+            if let predictedSize = model.predictedMergedSize, predictedSize > 0 {
+                let sizeString = ByteCountFormatter().string(fromByteCount: Int64(predictedSize))
+                Text("（预计合并后大小：\(sizeString)）")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+            }
+            
+            // 若合并成功，显示“实际合并后大小”
             if let mergedSize = model.mergedFileSize, model.mergeStatus == .success {
                 let sizeString = ByteCountFormatter().string(fromByteCount: Int64(mergedSize))
-                Text("（合并后大小：\(sizeString)）")
+                Text("（实际：\(sizeString)）")
                     .foregroundColor(.secondary)
                     .font(.caption)
             }

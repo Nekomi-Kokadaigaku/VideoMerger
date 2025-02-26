@@ -5,20 +5,26 @@
 //  Created by Iris on 2025-02-26.
 //
 
-
 import Foundation
 import SwiftUI
 import UserNotifications
 
-// MARK: - 管理整体状态的数据模型
+/// 管理整体状态的数据模型
 class VideoMergeModel: ObservableObject {
     private let userDefaults = UserDefaults.standard
     private let shouldDeleteKey = "ShouldDeleteSourceFiles"
     
-    // 从 UserDefaults 加载“是否删除源文件”设置
+    // ========== 新增或改动的属性/逻辑 ==========
+
+    /// “预计合并后大小”：在加载文件时就将所有源文件大小相加，方便提前查看。
+    @Published var predictedMergedSize: Int? = nil
+    
+    // ===========================================
+    
+    /// 是否在合并完成后删除源文件（从 UserDefaults 加载）
     @Published var shouldDeleteSourceFiles: Bool
     
-    // 存储合并后输出文件大小（字节），成功后更新
+    /// 合并成功后实际输出文件大小
     @Published var mergedFileSize: Int? = nil
     
     @Published var folderURL: URL? {
@@ -30,6 +36,7 @@ class VideoMergeModel: ObservableObject {
             }
         }
     }
+    
     @Published var outputFileName: String = "output.flv"
     
     // 标记用户是否手动修改过输出路径
@@ -82,19 +89,28 @@ class VideoMergeModel: ObservableObject {
     func loadVideoFiles() {
         guard let folder = folderURL else {
             videoFiles = []
+            predictedMergedSize = nil
             return
         }
         do {
             let fileURLs = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
             let flvFiles = fileURLs.filter { $0.pathExtension.lowercased() == "flv" }
             self.videoFiles = flvFiles.map { VideoFile(fileURL: $0) }
-            // 初始按时间戳排序，用户可手动拖动调整
+            
+            // 按时间戳排序
             self.videoFiles.sort { $0.timestamp < $1.timestamp }
+            
+            // 重新计算“预计合并后大小” = 所有源文件大小之和
+            let totalSize = self.videoFiles.compactMap(\.fileSize).reduce(0, +)
+            self.predictedMergedSize = totalSize
+            
             // 合并后大小需在下一次合并成功后再更新
             self.mergedFileSize = nil
+            
         } catch {
             print("读取文件夹内容出错：\(error)")
             self.videoFiles = []
+            self.predictedMergedSize = nil
         }
     }
     
@@ -108,7 +124,7 @@ class VideoMergeModel: ObservableObject {
         self.mergeStatus = .running
         
         let process = Process()
-        // 使用 zsh -l -c 方式，加载用户环境
+        // 使用 zsh -il -c 方式，确保加载 ~/.zshrc 和 ~/.zprofile
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
         process.arguments = ["-il", "-c", mergeCommand]
         
@@ -172,7 +188,7 @@ class VideoMergeModel: ObservableObject {
         }
     }
     
-    // 在 UI 中勾选“合并后删除源文件”时调用
+    /// 用户在 UI 中勾选或取消勾选“合并后删除源文件”
     func toggleShouldDelete() {
         shouldDeleteSourceFiles.toggle()
         persistDeleteOption()
