@@ -18,12 +18,7 @@ struct VideoFile: Identifiable {
     init(fileURL: URL) {
         self.fileURL = fileURL
         self.name = fileURL.lastPathComponent
-        // 尝试从文件名中提取时间戳，格式：YYYYMMDD-HHMMSS
-        if let date = VideoFile.extractTimestamp(from: fileURL.lastPathComponent) {
-            self.timestamp = date
-        } else {
-            self.timestamp = Date.distantPast
-        }
+        self.timestamp = VideoFile.extractTimestamp(from: fileURL.lastPathComponent) ?? Date.distantPast
     }
     
     /// 使用正则表达式解析文件名中的时间戳
