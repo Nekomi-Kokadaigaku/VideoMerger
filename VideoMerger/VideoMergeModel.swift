@@ -89,7 +89,7 @@ class VideoMergeModel: ObservableObject {
         let process = Process()
         // 使用 zsh -l -c 方式，加载用户环境
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        process.arguments = ["-l", "-c", mergeCommand]
+        process.arguments = ["-il", "-c", mergeCommand]
         
         process.terminationHandler = { [weak self] p in
             DispatchQueue.main.async {
