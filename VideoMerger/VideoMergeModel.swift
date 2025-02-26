@@ -12,6 +12,15 @@ import UserNotifications
 
 // MARK: - 管理整体状态的数据模型
 class VideoMergeModel: ObservableObject {
+    private let userDefaults = UserDefaults.standard
+    private let shouldDeleteKey = "ShouldDeleteSourceFiles"
+    
+    // 从 UserDefaults 加载“是否删除源文件”设置
+    @Published var shouldDeleteSourceFiles: Bool
+    
+    // 存储合并后输出文件大小（字节），成功后更新
+    @Published var mergedFileSize: Int? = nil
+    
     @Published var folderURL: URL? {
         didSet {
             loadVideoFiles()
@@ -36,8 +45,18 @@ class VideoMergeModel: ObservableObject {
     
     @Published var videoFiles: [VideoFile] = []
     
-    // 用于表示合并过程状态（小圆点颜色、通知等）
+    // 当前合并状态（小圆点、提示等）
     @Published var mergeStatus: MergeStatus = .idle
+    
+    init() {
+        // 从 UserDefaults 中读取布尔值
+        self.shouldDeleteSourceFiles = userDefaults.bool(forKey: shouldDeleteKey)
+    }
+    
+    // 每当 shouldDeleteSourceFiles 变化时，写回 UserDefaults
+    private func persistDeleteOption() {
+        userDefaults.set(shouldDeleteSourceFiles, forKey: shouldDeleteKey)
+    }
     
     /// 生成 yamdi 合并命令
     var mergeCommand: String {
@@ -71,6 +90,8 @@ class VideoMergeModel: ObservableObject {
             self.videoFiles = flvFiles.map { VideoFile(fileURL: $0) }
             // 初始按时间戳排序，用户可手动拖动调整
             self.videoFiles.sort { $0.timestamp < $1.timestamp }
+            // 合并后大小需在下一次合并成功后再更新
+            self.mergedFileSize = nil
         } catch {
             print("读取文件夹内容出错：\(error)")
             self.videoFiles = []
@@ -97,6 +118,25 @@ class VideoMergeModel: ObservableObject {
                 if p.terminationStatus == 0 {
                     self.mergeStatus = .success
                     self.notifyUser(title: "合并完成", body: "已成功合并视频到: \(self.outputURL.path)")
+                    
+                    // 获取合并后文件大小
+                    let attributes = try? FileManager.default.attributesOfItem(atPath: self.outputURL.path)
+                    if let size = attributes?[.size] as? Int {
+                        self.mergedFileSize = size
+                    }
+                    
+                    // 如果用户选择了“合并完成后删除源文件”
+                    if self.shouldDeleteSourceFiles {
+                        for file in self.videoFiles {
+                            do {
+                                try FileManager.default.removeItem(at: file.fileURL)
+                            } catch {
+                                print("删除源文件出错：\(error)")
+                            }
+                        }
+                    }
+                    
+                    // 在 Finder 中选中输出文件
                     NSWorkspace.shared.activateFileViewerSelecting([self.outputURL])
                 } else {
                     self.mergeStatus = .error
@@ -130,5 +170,11 @@ class VideoMergeModel: ObservableObject {
                 print("通知发送失败: \(error)")
             }
         }
+    }
+    
+    // 在 UI 中勾选“合并后删除源文件”时调用
+    func toggleShouldDelete() {
+        shouldDeleteSourceFiles.toggle()
+        persistDeleteOption()
     }
 }
