@@ -56,6 +56,10 @@ struct ContentView: View {
                             }
                         ))
                         .frame(minWidth: 300)
+                        
+                        Button("选择输出文件夹") {
+                            chooseOutputFolder()
+                        }
                     }
                 }
                 .padding(.vertical, 8)
@@ -68,13 +72,35 @@ struct ContentView: View {
                         HStack {
                             Image(systemName: "line.horizontal.3")
                                 .foregroundColor(.gray)
-                            VStack(alignment: .leading) {
+                            VStack(alignment: .leading, spacing: 4) {
                                 Text(video.name)
-                                Text(video.sizeString)
+                                    .font(.headline)
+                                Text("大小: \(video.sizeString)")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
+                                // 显示时间戳（格式化后的日期）
+                                if video.timestamp != Date.distantPast {
+                                    Text("时间: \(formattedDate(video.timestamp))")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                // 显示文件路径（可选，防止过长时截断）
+                                Text("路径: \(video.fileURL.path)")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(1)
                             }
                             Spacer()
+                            // 复制文件名按钮
+                            Button {
+                                let pasteboard = NSPasteboard.general
+                                pasteboard.clearContents()
+                                pasteboard.setString(video.name, forType: .string)
+                            } label: {
+                                Image(systemName: "doc.on.doc")
+                            }
+                            .buttonStyle(BorderlessButtonStyle())
+                            .help("复制文件名")
                             // 删除按钮
                             Button {
                                 if let index = model.videoFiles.firstIndex(where: { $0.id == video.id }) {
@@ -145,6 +171,23 @@ struct ContentView: View {
                 }
             }
         }
+    }
+    
+    func chooseOutputFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        
+        if panel.runModal() == .OK, let url = panel.url {
+            model.outputFilePath = url
+        }
+    }
+    
+    func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter.string(from: date)
     }
     
     // 拖动排序处理
