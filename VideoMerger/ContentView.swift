@@ -11,7 +11,7 @@ import UserNotifications
 /// 主界面
 struct ContentView: View {
     @ObservedObject var model = VideoMergeModel()
-    
+    @State private var alertMessage: String? = nil
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             

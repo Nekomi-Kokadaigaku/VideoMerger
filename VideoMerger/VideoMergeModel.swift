@@ -14,12 +14,8 @@ class VideoMergeModel: ObservableObject {
     private let userDefaults = UserDefaults.standard
     private let shouldDeleteKey = "ShouldDeleteSourceFiles"
     
-    // ========== 新增或改动的属性/逻辑 ==========
-
     /// “预计合并后大小”：在加载文件时就将所有源文件大小相加，方便提前查看。
     @Published var predictedMergedSize: Int? = nil
-    
-    // ===========================================
     
     /// 是否在合并完成后删除源文件（从 UserDefaults 加载）
     @Published var shouldDeleteSourceFiles: Bool
@@ -116,6 +112,13 @@ class VideoMergeModel: ObservableObject {
     
     /// 异步执行 yamdi 命令
     func startMerge() {
+        // 检查目标输出文件是否已存在，防止覆盖
+        if FileManager.default.fileExists(atPath: outputURL.path) {
+            self.mergeStatus = .error
+            notifyUser(title: "目标文件已存在", body: "输出文件名与目标文件夹中已有文件冲突，请更改输出文件名或输出文件夹。")
+            return
+        }
+        
         guard !videoFiles.isEmpty else {
             self.mergeStatus = .error
             notifyUser(title: "合并出错", body: "没有可合并的视频文件")
