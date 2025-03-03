@@ -11,6 +11,8 @@ import UserNotifications
 
 /// 管理整体状态的数据模型
 class VideoMergeModel: ObservableObject {
+    // 保存当前合并的进程引用
+    private var mergeProcess: Process?
     private let userDefaults = UserDefaults.standard
     private let shouldDeleteKey = "shouldDeleteSourceFiles"
     
@@ -132,6 +134,9 @@ class VideoMergeModel: ObservableObject {
         self.mergeStatus = .running
         
         let process = Process()
+        // 保存当前 process 引用，用于取消操作
+        mergeProcess = process
+        
         // 使用 zsh -il -c 方式，确保加载 ~/.zshrc 和 ~/.zprofile
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
         process.arguments = ["-il", "-c", mergeCommand]
@@ -139,6 +144,8 @@ class VideoMergeModel: ObservableObject {
         process.terminationHandler = { [weak self] p in
             DispatchQueue.main.async {
                 guard let self = self else { return }
+                // 清除保存的进程引用
+                self.mergeProcess = nil
                 if p.terminationStatus == 0 {
                     self.mergeStatus = .success
                     self.notifyUser(title: "合并完成", body: "已成功合并视频到: \(self.outputURL.path)")
@@ -149,28 +156,28 @@ class VideoMergeModel: ObservableObject {
                         self.mergedFileSize = size
                     }
                     
-                    // 如果用户选择了“合并完成后删除源文件”，改为移动到统一的无用文件夹
+                    // 如果用户选择了“合并完成后删除源文件”，移动源文件到垃圾桶（使用用户设置的垃圾桶路径）
                     if self.shouldDeleteSourceFiles {
-                        // 确定目标文件夹路径，比如用户文档目录下的 "UselessVideos"
-                        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-                        let trashFolderURL = documentsURL.appendingPathComponent(".UselessVideos")
-                        
-                        // 如果目标文件夹不存在，则创建
+                    
+                        let defaults = UserDefaults.standard
+                        let trashPath = defaults.string(forKey: "trashFolderPath") ?? ""
+                        let trashFolderURL: URL
+                        if !trashPath.isEmpty {
+                            trashFolderURL = URL(fileURLWithPath: trashPath)
+                        } else {
+                            let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+                            trashFolderURL = documentsURL.appendingPathComponent(".UselessVideos")
+                        }
                         if !FileManager.default.fileExists(atPath: trashFolderURL.path) {
                             do {
                                 try FileManager.default.createDirectory(at: trashFolderURL, withIntermediateDirectories: true, attributes: nil)
                             } catch {
-                                print("创建无用文件夹出错：\(error)")
+                                print("创建垃圾桶文件夹出错：\(error)")
                             }
                         }
-                        
-                        // 移动每个源文件到目标文件夹
                         for file in self.videoFiles {
                             let originalURL = file.fileURL
-                            // 构造目标文件路径
                             var destinationURL = trashFolderURL.appendingPathComponent(originalURL.lastPathComponent)
-                            
-                            // 如果目标文件已存在，则为避免冲突，在文件名后追加时间戳
                             if FileManager.default.fileExists(atPath: destinationURL.path) {
                                 let timestamp = Int(Date().timeIntervalSince1970)
                                 let fileName = originalURL.deletingPathExtension().lastPathComponent
@@ -178,7 +185,6 @@ class VideoMergeModel: ObservableObject {
                                 let newFileName = "\(fileName)_\(timestamp).\(fileExtension)"
                                 destinationURL = trashFolderURL.appendingPathComponent(newFileName)
                             }
-                            
                             do {
                                 try FileManager.default.moveItem(at: originalURL, to: destinationURL)
                             } catch {
@@ -187,11 +193,16 @@ class VideoMergeModel: ObservableObject {
                         }
                     }
                     
-                    // 在 Finder 中选中输出文件
                     NSWorkspace.shared.activateFileViewerSelecting([self.outputURL])
                 } else {
-                    self.mergeStatus = .error
-                    self.notifyUser(title: "合并出错", body: "请检查 yamdi 命令或文件路径是否正确")
+                    // 如果被终止，状态设为 idle 或 error，根据需要调整
+                    if self.mergeStatus == .running {
+                        self.mergeStatus = .idle
+                        self.notifyUser(title: "合并取消", body: "合并操作已被取消")
+                    } else {
+                        self.mergeStatus = .error
+                        self.notifyUser(title: "合并出错", body: "请检查 yamdi 命令或文件路径是否正确")
+                    }
                 }
             }
         }
@@ -199,9 +210,18 @@ class VideoMergeModel: ObservableObject {
         do {
             try process.run()  // 异步启动
         } catch {
-            // 如果命令无法执行，比如找不到 yamdi
             self.mergeStatus = .error
             notifyUser(title: "执行失败", body: "无法运行 yamdi，请检查环境变量或 yamdi 是否安装。")
+        }
+    }
+    
+    /// 取消合并操作
+    func cancelMerge() {
+        if let process = mergeProcess {
+            process.terminate()
+            mergeProcess = nil
+            mergeStatus = .idle
+            notifyUser(title: "合并取消", body: "用户取消了合并操作")
         }
     }
     

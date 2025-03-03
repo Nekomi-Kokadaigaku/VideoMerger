@@ -116,7 +116,15 @@ struct ContentView: View {
                     .foregroundColor(.secondary)
 
                 Spacer()
-
+                
+                if model.mergeStatus == .running {
+                    Button("取消合并") {
+                        model.cancelMerge()
+                    }
+                    .font(.system(size: 14))
+                    .padding(.trailing, 10)
+                }
+                
                 Button("开始合并") {
                     model.startMerge()
                 }
