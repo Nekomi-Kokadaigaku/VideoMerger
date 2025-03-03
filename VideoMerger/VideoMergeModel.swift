@@ -12,7 +12,7 @@ import UserNotifications
 /// 管理整体状态的数据模型
 class VideoMergeModel: ObservableObject {
     private let userDefaults = UserDefaults.standard
-    private let shouldDeleteKey = "ShouldDeleteSourceFiles"
+    private let shouldDeleteKey = "shouldDeleteSourceFiles"
     
     /// “预计合并后大小”：在加载文件时就将所有源文件大小相加，方便提前查看。
     @Published var predictedMergedSize: Int? = nil
@@ -100,6 +100,11 @@ class VideoMergeModel: ObservableObject {
             let totalSize = self.videoFiles.compactMap(\.fileSize).reduce(0, +)
             self.predictedMergedSize = totalSize
             
+            // 如果视频列表不为空，将第一项的文件名作为输出文件名
+            if let firstVideo = self.videoFiles.first {
+                self.outputFileName = firstVideo.name
+            }
+            
             // 合并后大小需在下一次合并成功后再更新
             self.mergedFileSize = nil
             
@@ -144,13 +149,40 @@ class VideoMergeModel: ObservableObject {
                         self.mergedFileSize = size
                     }
                     
-                    // 如果用户选择了“合并完成后删除源文件”
+                    // 如果用户选择了“合并完成后删除源文件”，改为移动到统一的无用文件夹
                     if self.shouldDeleteSourceFiles {
-                        for file in self.videoFiles {
+                        // 确定目标文件夹路径，比如用户文档目录下的 "UselessVideos"
+                        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+                        let trashFolderURL = documentsURL.appendingPathComponent(".UselessVideos")
+                        
+                        // 如果目标文件夹不存在，则创建
+                        if !FileManager.default.fileExists(atPath: trashFolderURL.path) {
                             do {
-                                try FileManager.default.removeItem(at: file.fileURL)
+                                try FileManager.default.createDirectory(at: trashFolderURL, withIntermediateDirectories: true, attributes: nil)
                             } catch {
-                                print("删除源文件出错：\(error)")
+                                print("创建无用文件夹出错：\(error)")
+                            }
+                        }
+                        
+                        // 移动每个源文件到目标文件夹
+                        for file in self.videoFiles {
+                            let originalURL = file.fileURL
+                            // 构造目标文件路径
+                            var destinationURL = trashFolderURL.appendingPathComponent(originalURL.lastPathComponent)
+                            
+                            // 如果目标文件已存在，则为避免冲突，在文件名后追加时间戳
+                            if FileManager.default.fileExists(atPath: destinationURL.path) {
+                                let timestamp = Int(Date().timeIntervalSince1970)
+                                let fileName = originalURL.deletingPathExtension().lastPathComponent
+                                let fileExtension = originalURL.pathExtension
+                                let newFileName = "\(fileName)_\(timestamp).\(fileExtension)"
+                                destinationURL = trashFolderURL.appendingPathComponent(newFileName)
+                            }
+                            
+                            do {
+                                try FileManager.default.moveItem(at: originalURL, to: destinationURL)
+                            } catch {
+                                print("移动文件出错：\(error)")
                             }
                         }
                     }
