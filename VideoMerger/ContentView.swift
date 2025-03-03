@@ -233,8 +233,15 @@ struct ContentView: View {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        
+
+        // 尝试加载上次的文件夹路径
+        if let lastFolderPath = UserDefaults.standard.string(forKey: "LastSelectedFolderPath") {
+            panel.directoryURL = URL(fileURLWithPath: lastFolderPath)
+        }
+
         if panel.runModal() == .OK, let url = panel.url {
+            // 保存当前选择的文件夹路径
+            UserDefaults.standard.set(url.path, forKey: "LastSelectedFolderPath")
             model.folderURL = url
         }
     }
@@ -245,8 +252,15 @@ struct ContentView: View {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        
+
+        // 尝试加载上次的输出文件夹路径
+        if let lastOutputPath = UserDefaults.standard.string(forKey: "LastOutputFolderPath") {
+            panel.directoryURL = URL(fileURLWithPath: lastOutputPath)
+        }
+
         if panel.runModal() == .OK, let url = panel.url {
+            // 保存当前选择的输出文件夹路径
+            UserDefaults.standard.set(url.path, forKey: "LastOutputFolderPath")
             model.outputFilePath = url
         }
     }
