@@ -5,26 +5,23 @@
 //  Created by Iris on 2025-03-04.
 //
 
-
 import SwiftUI
 
 enum SettingsItem: String, CaseIterable, Identifiable {
     case trash = "垃圾桶设置"
     case fileProcessing = "文件处理设置"
-
+    
     var id: String { rawValue }
 }
 
 struct SettingsView: View {
     @State private var selectedItem: SettingsItem? = .trash
-
+    
     var body: some View {
         NavigationSplitView {
-            List(selection: $selectedItem) {
-                ForEach(SettingsItem.allCases) { item in
-                    Text(item.rawValue)
-                        .tag(item)
-                }
+            List(SettingsItem.allCases, selection: $selectedItem) { item in
+                Text(item.rawValue)
+                    .tag(item)
             }
             .listStyle(SidebarListStyle())
             .frame(minWidth: 150)
@@ -56,8 +53,7 @@ struct TrashSettingsView: View {
             Text("垃圾桶设置")
                 .font(.headline)
                 .bold()
-
-            // 垃圾桶位置选择区域
+            
             HStack {
                 Text("垃圾桶位置:")
                     .frame(width: 80, alignment: .leading)
@@ -73,8 +69,7 @@ struct TrashSettingsView: View {
                 }
                 .padding(.horizontal, 5)
             }
-
-            // 清空阈值设置，使用文本框允许用户手动输入
+            
             HStack {
                 Text("清空阈值 (GB):")
                     .frame(width: 100, alignment: .leading)
@@ -94,7 +89,7 @@ struct TrashSettingsView: View {
                     }
                 }
             }
-
+            
             Spacer()
         }
         .padding(20)
@@ -102,16 +97,14 @@ struct TrashSettingsView: View {
             tempThreshold = "\(trashClearThresholdGB)"
         }
     }
-
-    /// 使用 NSOpenPanel 选择垃圾桶文件夹，并在选定位置下新建 .trash 文件夹
+    
     func chooseTrashFolder() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-
+        
         if panel.runModal() == .OK, let url = panel.url {
-            // 在用户选择的位置下新建 .trash 文件夹
             let trashURL = url.appendingPathComponent(".trash")
             do {
                 try FileManager.default.createDirectory(at: trashURL, withIntermediateDirectories: true, attributes: nil)
@@ -121,14 +114,12 @@ struct TrashSettingsView: View {
             }
         }
     }
-
-    /// 过滤输入，只允许数字
+    
     func validateThresholdInput(_ value: String) {
         let filtered = value.filter { "0123456789".contains($0) }
         tempThreshold = filtered
     }
-
-    /// 将用户输入的数值应用到垃圾桶清空阈值，并限制范围在 8 ~ 1000 GB 之间
+    
     func applyThreshold() {
         if let intValue = Int(tempThreshold) {
             let correctedValue = max(8, min(intValue, 1000))
@@ -141,18 +132,15 @@ struct TrashSettingsView: View {
 }
 
 struct FileProcessingSettingsView: View {
-    // 示例：合并后是否移动源文件的设置
     @AppStorage("shouldDeleteSourceFiles") var shouldDeleteSourceFiles: Bool = false
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("文件处理设置")
                 .font(.headline)
                 .bold()
-
             Toggle("合并后移动源文件", isOn: $shouldDeleteSourceFiles)
                 .help("如果启用，合并后源文件将会移动到统一的垃圾桶")
-
             Spacer()
         }
         .padding(20)

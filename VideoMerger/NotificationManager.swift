@@ -5,7 +5,6 @@
 //  Created by Iris on 2025-03-04.
 //
 
-
 import SwiftUI
 import UserNotifications
 
@@ -15,17 +14,15 @@ class NotificationManager {
     
     private init() {}
     
-    /// 检查通知权限并请求，如果权限为未决定则发起请求，如果为拒绝且提示次数未满3次，则展示提示
+    /// 检查通知权限，并根据状态请求或提示
     func checkAndRequestPermission() {
         let center = UNUserNotificationCenter.current()
         center.getNotificationSettings { settings in
             DispatchQueue.main.async {
                 switch settings.authorizationStatus {
                 case .notDetermined:
-                    // 尚未决定，直接请求权限
                     self.requestPermission()
                 case .denied:
-                    // 如果用户已经拒绝，则判断提示次数，最多提示3次
                     let count = UserDefaults.standard.integer(forKey: self.notificationPromptCountKey)
                     if count < 3 {
                         self.showAlertToOpenSettings()
@@ -52,7 +49,7 @@ class NotificationManager {
         }
     }
     
-    /// 提示用户如何手动开启通知权限（macOS下无法直接打开设置）
+    /// 提示用户如何手动开启通知权限
     func showAlertToOpenSettings() {
         let alert = NSAlert()
         alert.messageText = "通知未开启"
@@ -61,7 +58,7 @@ class NotificationManager {
         alert.runModal()
     }
     
-    /// 发送通知，发送之前先检查授权状态
+    /// 发送通知（在发送前检查授权）
     func sendNotification(title: String, body: String) {
         let center = UNUserNotificationCenter.current()
         center.getNotificationSettings { settings in

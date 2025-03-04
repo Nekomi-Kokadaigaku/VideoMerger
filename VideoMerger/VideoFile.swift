@@ -5,7 +5,6 @@
 //  Created by Iris on 2025-02-26.
 //
 
-
 import Foundation
 
 // MARK: - 单个视频文件的数据结构
@@ -39,6 +38,14 @@ struct VideoFile: Identifiable {
     }
     
     /// 尝试从文件名中解析出 "YYYYMMDD-HHMMSS" 的时间戳
+    var formattedTimestamp: String {
+        guard timestamp != Date.distantPast else { return "未知时间" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter.string(from: timestamp)
+    }
+    
+    /// 从文件名中提取 “YYYYMMDD-HHMMSS” 格式的时间戳
     static func extractTimestamp(from fileName: String) -> Date? {
         let pattern = "(\\d{8}-\\d{6})"
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
