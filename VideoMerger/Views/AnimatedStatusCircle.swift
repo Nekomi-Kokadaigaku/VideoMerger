@@ -8,7 +8,9 @@
 import SwiftUI
 
 struct AnimatedStatusCircle: View {
+
     let status: MergeStatus
+    
     @State private var animationScale: CGFloat = 1.0
 
     var body: some View {
@@ -21,7 +23,7 @@ struct AnimatedStatusCircle: View {
                 updateAnimation(for: newStatus)
             }
     }
-    
+
     /// 根据当前状态启动或取消“呼吸灯”动画
     private func updateAnimation(for newStatus: MergeStatus) {
         if newStatus == .running {

@@ -12,13 +12,19 @@ import UniformTypeIdentifiers
 
 /// 管理整体状态的数据模型
 class VideoMergeModel: ObservableObject {
+    /// 合并进程
     private var mergeProcess: Process?
+    /// 用户默认设置
     private let userDefaults = UserDefaults.standard
+    /// 是否删除源文件
     private let shouldDeleteKey = "shouldDeleteSourceFiles"
-    
+    /// 预测合并后文件大小
     @Published var predictedMergedSize: Int? = nil
+    /// 是否删除源文件
     @Published var shouldDeleteSourceFiles: Bool
+    /// 合并后文件大小
     @Published var mergedFileSize: Int? = nil
+    /// 文件夹路径
     @Published var folderURL: URL? {
         didSet {
             loadVideoFiles()
@@ -27,10 +33,11 @@ class VideoMergeModel: ObservableObject {
             }
         }
     }
-    
+    /// 输出文件名
     @Published var outputFileName: String = "output.flv"
+    /// 是否修改输出路径
     private var isOutputPathUserModified = false
-    
+    /// 输出路径
     @Published var outputFilePath: URL? {
         didSet {
             if oldValue != outputFilePath {
@@ -38,18 +45,21 @@ class VideoMergeModel: ObservableObject {
             }
         }
     }
-    
+    /// 视频文件列表
     @Published var videoFiles: [VideoFile] = []
+    /// 合并状态
     @Published var mergeStatus: MergeStatus = .idle
-    
+
     init() {
         self.shouldDeleteSourceFiles = userDefaults.bool(forKey: shouldDeleteKey)
     }
-    
+
+    /// 持久化删除选项
     private func persistDeleteOption() {
         userDefaults.set(shouldDeleteSourceFiles, forKey: shouldDeleteKey)
     }
-    
+
+    /// 合并命令
     var mergeCommand: String {
         let inputs = videoFiles.map { "-i \"\($0.fileURL.path)\"" }.joined(separator: " ")
         guard let outputFolder = outputFilePath else {
@@ -58,7 +68,8 @@ class VideoMergeModel: ObservableObject {
         let output = outputFolder.appendingPathComponent(outputFileName).path
         return "yamdi \(inputs) -o \"\(output)\""
     }
-    
+
+    /// 输出路径
     var outputURL: URL {
         guard let folder = outputFilePath else {
             return URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
@@ -66,7 +77,7 @@ class VideoMergeModel: ObservableObject {
         }
         return folder.appendingPathComponent(outputFileName)
     }
-    
+
     /// 扫描文件夹内的 .flv 文件并加载列表
     func loadVideoFiles() {
         guard let folder = folderURL else {
@@ -90,7 +101,7 @@ class VideoMergeModel: ObservableObject {
             predictedMergedSize = nil
         }
     }
-    
+
     /// 异步执行 yamdi 命令
     func startMerge() {
         if FileManager.default.fileExists(atPath: outputURL.path) {
@@ -98,7 +109,7 @@ class VideoMergeModel: ObservableObject {
             notifyUser(title: "目标文件已存在", body: "输出文件名与目标文件夹中已有文件冲突，请更改输出文件名或输出文件夹。")
             return
         }
-        
+
         guard !videoFiles.isEmpty else {
             mergeStatus = .error
             notifyUser(title: "合并出错", body: "没有可合并的视频文件")
@@ -109,7 +120,7 @@ class VideoMergeModel: ObservableObject {
         mergeProcess = process
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
         process.arguments = ["-il", "-c", mergeCommand]
-        
+
         process.terminationHandler = { [weak self] p in
             DispatchQueue.main.async {
                 guard let self = self else { return }
@@ -136,7 +147,7 @@ class VideoMergeModel: ObservableObject {
                 }
             }
         }
-        
+
         do {
             try process.run()
         } catch {
@@ -144,7 +155,7 @@ class VideoMergeModel: ObservableObject {
             notifyUser(title: "执行失败", body: "无法运行 yamdi，请检查环境变量或 yamdi 是否安装。")
         }
     }
-    
+
     /// 取消合并操作
     func cancelMerge() {
         if let process = mergeProcess {
@@ -154,13 +165,13 @@ class VideoMergeModel: ObservableObject {
             notifyUser(title: "合并取消", body: "用户取消了合并操作")
         }
     }
-    
+
     /// 发送本地通知
     private func notifyUser(title: String, body: String) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        
+
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
             content: content,
@@ -172,7 +183,7 @@ class VideoMergeModel: ObservableObject {
             }
         }
     }
-    
+
     /// 移动源文件到垃圾桶
     private func moveSourceFilesToTrash() {
         let defaults = UserDefaults.standard
@@ -208,13 +219,13 @@ class VideoMergeModel: ObservableObject {
             }
         }
     }
-    
+
     /// 用户切换“合并后删除源文件”
     func toggleShouldDelete() {
         shouldDeleteSourceFiles.toggle()
         persistDeleteOption()
     }
-    
+
     /// 处理拖放文件，返回是否处理成功
     func handleFileDrop(providers: [NSItemProvider]) -> Bool {
         var found = false
@@ -236,7 +247,8 @@ class VideoMergeModel: ObservableObject {
         }
         return found
     }
-    
+
+    /// 处理拖放文件
     private func processDroppedFile(url: URL) {
         guard url.pathExtension.lowercased() == "flv" else { return }
         DispatchQueue.main.async {

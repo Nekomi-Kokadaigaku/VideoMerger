@@ -100,7 +100,7 @@ extension ContentView {
                 .onMove(perform: moveVideo)
                 .onDelete(perform: deleteVideo)
             }
-            .frame(minHeight: 150, maxHeight: 250)
+            .frame(minHeight: 150, maxHeight: .infinity)
             .onDrop(of: [UTType.fileURL.identifier], isTargeted: nil, perform: model.handleFileDrop)
         }
     }
