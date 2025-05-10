@@ -2,10 +2,9 @@
 //  VideoFile.swift
 //  VideoMerger
 //
-//  Created by Iris on 2025-02-26.
-//
 
 import Foundation
+
 
 // MARK: - 单个视频文件的数据结构
 struct VideoFile: Identifiable {

@@ -2,14 +2,14 @@
 //  ContentView.swift
 //  VideoMerger
 //
-//  Created by Iris on 2025-02-26.
-//
 
 import SwiftUI
 import UserNotifications
 import UniformTypeIdentifiers
 
+
 struct ContentView: View {
+
     @ObservedObject var model = VideoMergeModel()
     @State private var alertMessage: String? = nil
 
@@ -27,13 +27,16 @@ struct ContentView: View {
     }
 }
 
+
 // MARK: - UI 组件拆分
 extension ContentView {
+
     private var sourceFolderGroup: some View {
         GroupBox(label: Text("视频文件夹选择").font(.headline)) {
             HStack {
                 Text("文件夹路径：")
                     .font(.system(size: 14))
+
                 TextField("请选择文件夹", text: Binding(
                     get: { model.folderURL?.path ?? "" },
                     set: { _ in }
@@ -57,6 +60,7 @@ extension ContentView {
                 HStack {
                     Text("输出文件名：")
                         .font(.system(size: 14))
+
                     TextField("output.flv", text: $model.outputFileName)
                         .font(.system(size: 14))
                         .frame(minWidth: 200)
@@ -65,6 +69,7 @@ extension ContentView {
                 HStack {
                     Text("输出文件路径：")
                         .font(.system(size: 14))
+
                     TextField("", text: Binding(
                         get: { model.outputFilePath?.path ?? "" },
                         set: { newValue in
@@ -114,16 +119,21 @@ extension ContentView {
             .frame(minHeight: 80, maxHeight: 120)
             .padding(.vertical, 4)
             .font(.system(size: 12))
+            .scrollContentBackground(.hidden)
+            .scrollDisabled(true)
         }
     }
 
     private var statusAndMergeButtons: some View {
         HStack {
             AnimatedStatusCircle(status: model.mergeStatus)
+
             Text(model.mergeStatus.description)
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
+
             Spacer()
+
             if model.mergeStatus == .running {
                 Button("取消合并") {
                     model.cancelMerge()
@@ -131,6 +141,7 @@ extension ContentView {
                 .font(.system(size: 14))
                 .padding(.trailing, 10)
             }
+
             Button("开始合并") {
                 model.startMerge()
             }
@@ -143,12 +154,14 @@ extension ContentView {
         HStack {
             Text("合并视频文件列表（可拖动排序、删除） - \(model.videoFiles.count) 个文件")
                 .font(.headline)
+
             if let predictedSize = model.predictedMergedSize, predictedSize > 0 {
                 let sizeString = ByteCountFormatter.string(fromByteCount: Int64(predictedSize), countStyle: .file)
                 Text("（预计合并后大小：\(sizeString)）")
                     .foregroundColor(.secondary)
                     .font(.caption)
             }
+
             if let mergedSize = model.mergedFileSize, model.mergeStatus == .success {
                 let sizeString = ByteCountFormatter.string(fromByteCount: Int64(mergedSize), countStyle: .file)
                 Text("（实际：\(sizeString)）")
@@ -159,8 +172,10 @@ extension ContentView {
     }
 }
 
+
 // MARK: - 交互逻辑
 extension ContentView {
+
     /// 请求通知权限
     private func requestNotificationPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
@@ -211,23 +226,29 @@ extension ContentView {
             Image(systemName: "line.horizontal.3")
                 .foregroundColor(.gray)
                 .padding(.top, 2)
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(video.name)
                     .font(.system(size: 13, weight: .semibold))
+
                 Text("大小: \(video.sizeString)")
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
+
                 if video.timestamp != Date.distantPast {
                     Text("时间: \(video.formattedTimestamp)")
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
                 }
+
                 Text("路径: \(video.fileURL.path)")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
                     .lineLimit(1)
             }
+
             Spacer()
+
             Button {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(video.name, forType: .string)
@@ -256,6 +277,7 @@ extension ContentView {
         }
     }
 }
+
 
 #Preview {
     ContentView()

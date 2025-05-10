@@ -2,13 +2,14 @@
 //  TrashManager.swift
 //  VideoMerger
 //
-//  Created by Iris on 2025-03-04.
-//
 
 import Foundation
 
+
 class TrashManager {
+
     static let shared = TrashManager()
+
     private init() {}
     
     /// 检查垃圾桶大小是否超过阈值，如果超过则清空

@@ -2,19 +2,21 @@
 //  SettingsView.swift
 //  VideoMerger
 //
-//  Created by Iris on 2025-03-04.
-//
 
 import SwiftUI
 
+
 enum SettingsItem: String, CaseIterable, Identifiable {
+
     case trash = "垃圾桶设置"
     case fileProcessing = "文件处理设置"
     
     var id: String { rawValue }
 }
 
+
 struct SettingsView: View {
+
     @State private var selectedItem: SettingsItem? = .trash
     
     var body: some View {
@@ -40,7 +42,9 @@ struct SettingsView: View {
     }
 }
 
+
 struct TrashSettingsView: View {
+
     // 垃圾桶路径，默认路径为空，后续由用户选择后存入 UserDefaults
     @AppStorage("trashFolderPath") var trashFolderPath: String = ""
     // 垃圾桶清空阈值（单位 GB），默认10GB
@@ -131,7 +135,9 @@ struct TrashSettingsView: View {
     }
 }
 
+
 struct FileProcessingSettingsView: View {
+
     @AppStorage("shouldDeleteSourceFiles") var shouldDeleteSourceFiles: Bool = false
     
     var body: some View {
@@ -146,6 +152,7 @@ struct FileProcessingSettingsView: View {
         .padding(20)
     }
 }
+
 
 #Preview {
     SettingsView()

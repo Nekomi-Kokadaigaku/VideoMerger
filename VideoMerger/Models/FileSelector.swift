@@ -2,8 +2,6 @@
 //  FileSelector.swift
 //  VideoMerger
 //
-//  Created by 1ris_W
-//
 
 import AppKit
 import UniformTypeIdentifiers

@@ -2,10 +2,9 @@
 //  MergeStatus.swift
 //  VideoMerger
 //
-//  Created by Iris on 2025-02-27.
-//
 
 import SwiftUI
+
 
 /// 合并状态指示
 enum MergeStatus {
@@ -15,7 +14,9 @@ enum MergeStatus {
     case error      // 出错
 }
 
+
 extension MergeStatus {
+
     /// 返回状态对应的颜色
     var circleColor: Color {
         switch self {

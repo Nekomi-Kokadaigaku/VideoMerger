@@ -2,13 +2,12 @@
 //  VideoMergeModel.swift
 //  VideoMerger
 //
-//  Created by Iris on 2025-02-26.
-//
 
 import Foundation
 import SwiftUI
 import UserNotifications
 import UniformTypeIdentifiers
+
 
 /// 管理整体状态的数据模型
 class VideoMergeModel: ObservableObject {

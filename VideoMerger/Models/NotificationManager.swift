@@ -2,14 +2,15 @@
 //  NotificationManager.swift
 //  VideoMerger
 //
-//  Created by Iris on 2025-03-04.
-//
 
 import SwiftUI
 import UserNotifications
 
+
 class NotificationManager {
+
     static let shared = NotificationManager()
+
     private let notificationPromptCountKey = "NotificationPromptCount"
     
     private init() {}

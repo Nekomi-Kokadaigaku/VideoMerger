@@ -2,10 +2,9 @@
 //  AnimatedStatusCircle.swift
 //  VideoMerger
 //
-//  Created by Iris on 2025-02-27.
-//
 
 import SwiftUI
+
 
 struct AnimatedStatusCircle: View {
 
@@ -35,6 +34,7 @@ struct AnimatedStatusCircle: View {
         }
     }
 }
+
 
 #Preview {
     Group {
